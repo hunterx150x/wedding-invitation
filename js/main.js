@@ -502,7 +502,7 @@
 
     $$('.seal, .envelope__hint').forEach(el => el.style.animation = 'none');
     const tl = gsap.timeline({ onComplete: finishOpen });
-    tl.to(['.envelope__hint', '.envelope__to'], { opacity: 0, y: 10, duration: .4, ease: 'power2.out' }, 0)
+    tl.to('.envelope__hint', { opacity: 0, y: 10, duration: .4, ease: 'power2.out' }, 0)
       .to(seal, { scale: 1.08, duration: .18, ease: 'power2.out' }, 0)
       .to(seal, { scale: .4, opacity: 0, rotate: -25, y: 30, filter: 'blur(6px)', duration: .65, ease: 'power3.in' }, .18)
       .to('.flap-wrap--top',    { rotateX: 165, duration: 1.2, ease: 'power3.inOut' }, .45)
