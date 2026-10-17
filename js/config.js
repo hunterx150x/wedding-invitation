@@ -12,7 +12,7 @@ window.WEDDING = {
 
   // Optional line under the names (leave '' to hide)
   parents: {
-    en: 'Son of Mr. &amp; Jinda &nbsp;·&nbsp; Daughter of &amp; Mrs. Phawaphon',
+    en: 'Son of Mr. Jinda &nbsp;·&nbsp; Daughter of Mrs. Phawaphon',
     th: 'บุตรของ คุณจินดา &nbsp;·&nbsp; ธิดาของ คุณภวพร'
   },
 
