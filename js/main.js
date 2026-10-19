@@ -1,14 +1,30 @@
 (() => {
   'use strict';
 
-  const C = window.WEDDING;
-  const T = window.I18N;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const params = new URLSearchParams(location.search);
+  const isPreview = params.get('preview') === '1';
+
+  // /admin live preview hands over its draft config through localStorage
+  const C = (() => {
+    if (isPreview) {
+      try { const d = JSON.parse(localStorage.getItem('webding-preview')); if (d) return d; } catch (e) { /* ignore */ }
+    }
+    return window.WEDDING;
+  })();
+  const T = mergeTexts(window.I18N, C.texts);
+
   const hasGsap = !!(window.gsap && window.ScrollTrigger);
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const animOn = hasGsap && !reduceMotion;
+  const animOn = hasGsap && !reduceMotion && params.get('static') !== '1';
+
+  function mergeTexts(base, over) {
+    const out = {};
+    Object.keys(base).forEach(l => { out[l] = Object.assign({}, base[l], (over && over[l]) || {}); });
+    return out;
+  }
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   if (animOn) {
     document.documentElement.classList.add('anim');
@@ -43,6 +59,7 @@
   }
 
   function fmtDayMonth(iso, lang) {
+    if (!iso) return '';
     const [y, m, d] = iso.split('-').map(Number);
     return lang === 'th' ? `${d} ${MONTH_TH[m - 1]} ${y + 543}` : `${MONTH_EN[m - 1]} ${ord(d)}, ${y}`;
   }
@@ -110,6 +127,47 @@
   document.documentElement.style.setProperty('--emboss', embossTile(1));
   document.documentElement.style.setProperty('--emboss-light', embossTile(.45));
 
+  /* ---------------------------------------------------------
+     Theme colours, dress-code swatches, section visibility
+     --------------------------------------------------------- */
+  const THEME_VARS = { envelope: '--env', seal: '--seal', accent: '--sage-2', heading: '--olive-ink', text: '--ink', paper: '--cream', background: '--bg-out' };
+  if (C.theme) {
+    Object.keys(THEME_VARS).forEach(k => { if (C.theme[k]) document.documentElement.style.setProperty(THEME_VARS[k], C.theme[k]); });
+    if (C.theme.envelope) $('meta[name="theme-color"]').content = C.theme.envelope;
+  }
+
+  if (C.dress && Array.isArray(C.dress.colors)) {
+    $('.swatches').innerHTML = C.dress.colors
+      .map(c => `<li style="--c:${esc(c.color)}"><i></i><span>${esc(c.name)}</span></li>`).join('');
+  }
+
+  // Venue illustration: one of window.ILLUSTRATIONS, a custom image, or none
+  (() => {
+    const pick = C.illustration || 'villa';
+    const el = $('#villa');
+    if (pick === 'none') { el.hidden = true; return; }
+    if (pick === 'custom') {
+      if (!C.illustrationUrl) return;
+      const img = new Image();
+      img.id = 'villa';
+      img.className = 'villa villa--img';
+      img.alt = '';
+      img.src = C.illustrationUrl;
+      el.replaceWith(img);
+      return;
+    }
+    const scene = window.ILLUSTRATIONS && window.ILLUSTRATIONS[pick];
+    if (scene) $('g', el).innerHTML = scene.svg;
+  })();
+
+  Object.entries(C.sections || {}).forEach(([id, on]) => {
+    if (on !== false) return;
+    const sec = document.getElementById(id);
+    if (sec) sec.hidden = true;
+    const dot = $(`.dots a[href="#${id}"]`);
+    if (dot) dot.hidden = true;
+  });
+
   // decorative line sprigs in some sections
   const sprigLine = `<svg class="sprig" viewBox="0 0 160 160" aria-hidden="true">${sprig('none', 'currentColor', 1)}</svg>`;
   ['#story', '#venue', '#dress', '#rsvp'].forEach((id, i) => {
@@ -120,7 +178,7 @@
   /* ---------------------------------------------------------
      Content rendering + i18n
      --------------------------------------------------------- */
-  let lang = params.get('lang') || store.get('wedding-lang') || 'th';
+  let lang = params.get('lang') || (!isPreview && store.get('wedding-lang')) || C.defaultLang || 'th';
   if (!T[lang]) lang = 'th';
 
   function splitGraphemes(str, l) {
@@ -171,15 +229,16 @@
     $('.js-rsvp-by').textContent = fmtDayMonth(C.rsvp.by, lang);
     $$('.js-email').forEach(el => { el.textContent = C.rsvp.email; el.href = `mailto:${C.rsvp.email}`; });
 
-    $('#programList').innerHTML = C.program.map(p => {
-      const [ph, pm] = p.time.split(':').map(Number);
-      const tm = isTh ? `${pad(ph)}.${pad(pm)} น.` : fmtTimeEn(ph, pm);
-      return `<li><time>${tm}</time><span>${p[lang]}</span></li>`;
+    $('#programList').innerHTML = (C.program || []).map(p => {
+      const [ph, pm] = String(p.time || '').split(':').map(Number);
+      const tm = isNaN(ph) ? '' : isTh ? `${pad(ph)}.${pad(pm || 0)} น.` : fmtTimeEn(ph, pm || 0);
+      return `<li><time>${tm}</time><span>${esc(p[lang])}</span></li>`;
     }).join('');
 
-    $('#storyList').innerHTML = '<span class="story__line"></span>' + C.story.map(s => {
-      const yr = isTh ? Number(s.year) + 543 : s.year;
-      return `<li><div class="story__year">${yr}</div><div class="story__body"><h3>${s[lang].title}</h3><p>${s[lang].text}</p></div></li>`;
+    $('#storyList').innerHTML = '<span class="story__line"></span>' + (C.story || []).map(s => {
+      const yr = s.year && isTh && /^\d{4}$/.test(s.year) ? Number(s.year) + 543 : (s.year || '');
+      const st = s[lang] || {};
+      return `<li><div class="story__year">${esc(yr)}</div><div class="story__body"><h3>${esc(st.title)}</h3><p>${esc(st.text)}</p></div></li>`;
     }).join('');
 
     document.title = `${names[0]} & ${names[1]} — ${t.calTitle}`;
@@ -523,11 +582,20 @@
   envelope.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(false); });
 
   // ?open=1 skips the envelope (handy for sharing a direct link / testing)
+  // ?y=<px> restores the scroll position (used by the /admin preview)
   if (params.get('open') === '1') {
     openEnvelope(true);
-    if (location.hash) {
-      const target = $(location.hash);
-      if (target) requestAnimationFrame(() => lenis ? lenis.scrollTo(target, { immediate: true }) : target.scrollIntoView());
-    }
+    const y = parseFloat(params.get('y'));
+    const target = location.hash && $(location.hash);
+    requestAnimationFrame(() => {
+      if (!isNaN(y)) { if (lenis) lenis.scrollTo(y, { immediate: true, force: true }); else window.scrollTo(0, y); }
+      else if (target) {
+        // short elements (e.g. the illustration) are centred, sections start at the top
+        const hgt = target.getBoundingClientRect().height;
+        const offset = hgt < innerHeight ? -(innerHeight - hgt) / 2 : 0;
+        if (lenis) lenis.scrollTo(target, { immediate: true, force: true, offset });
+        else window.scrollTo(0, target.getBoundingClientRect().top + scrollY + offset);
+      }
+    });
   }
 })();

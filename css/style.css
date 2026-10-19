@@ -2,17 +2,22 @@
    Wedding Invitation — Sage & Ivory
    ========================================================= */
 :root {
-  --sage: #8f9d74;
-  --sage-2: #7f8d64;
-  --sage-deep: #56603f;
-  --olive-ink: #4b5240;
-  --ink: #545a47;
-  --ink-soft: #7b8169;
-  --line: #c4c8b2;
-  --cream: #fcfbf1;
-  --cream-2: #f5f3e4;
-  --gold: #c7b285;
-  --bg-out: #e6e5d6;
+  /* Theme colours — overridable from config.theme (see /admin) */
+  --env: #8f9d74;        /* envelope */
+  --seal: #e3d2ad;       /* wax seal */
+  --sage-2: #7f8d64;     /* accent */
+  --olive-ink: #4b5240;  /* headings */
+  --ink: #545a47;        /* body text */
+  --cream: #fcfbf1;      /* card paper */
+  --bg-out: #dfe0cd;     /* page background around the card */
+
+  /* Derived */
+  --sage: var(--env);
+  --sage-deep: color-mix(in srgb, var(--sage-2) 70%, black);
+  --ink-soft: color-mix(in srgb, var(--ink) 72%, var(--cream));
+  --line: color-mix(in srgb, var(--sage-2) 42%, var(--cream));
+  --cream-2: color-mix(in srgb, var(--cream) 94%, var(--ink));
+  --gold: color-mix(in srgb, var(--seal) 80%, black);
 
   --card-w: 560px;
   --frame-gap: 14px;
@@ -57,7 +62,7 @@ body.is-locked { overflow: hidden; height: 100svh; }
 body::before {
   content: '';
   position: fixed; inset: 0;
-  background-color: #dfe0cd;
+  background-color: var(--bg-out);
   background-image: var(--emboss-light, none);
   background-size: 360px;
   opacity: 1;
@@ -81,7 +86,7 @@ button { font: inherit; color: inherit; }
 .envelope {
   position: fixed; inset: 0;
   z-index: 50;
-  background: #4c573a radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.1), rgba(0,0,0,.18) 75%);
+  background: color-mix(in srgb, var(--env) 52%, black) radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.1), rgba(0,0,0,.18) 75%);
   display: grid; place-items: center;
   overflow: hidden;
 }
@@ -110,13 +115,13 @@ button { font: inherit; color: inherit; }
   content: ''; position: absolute; inset: 0;
   pointer-events: none;
 }
-.flap--top    { clip-path: polygon(-2% 0, 102% 0, 50% 54%); background-color: #95a37a; }
+.flap--top    { clip-path: polygon(-2% 0, 102% 0, 50% 54%); background-color: color-mix(in srgb, var(--env) 93%, white); }
 .flap--top::after { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)); }
-.flap--bottom { clip-path: polygon(-2% 100%, 50% 47%, 102% 100%); background-color: #8a9870; }
+.flap--bottom { clip-path: polygon(-2% 100%, 50% 47%, 102% 100%); background-color: color-mix(in srgb, var(--env) 96%, black); }
 .flap--bottom::after { background: linear-gradient(0deg, rgba(0,0,0,.06), rgba(255,255,255,.06)); }
-.flap--left   { clip-path: polygon(0 -2%, 54% 50%, 0 102%); background-color: #8c9a71; }
+.flap--left   { clip-path: polygon(0 -2%, 54% 50%, 0 102%); background-color: color-mix(in srgb, var(--env) 98%, black); }
 .flap--left::after { background: linear-gradient(90deg, rgba(0,0,0,.03), rgba(0,0,0,.12)); }
-.flap--right  { clip-path: polygon(100% -2%, 46% 50%, 100% 102%); background-color: #8c9a71; }
+.flap--right  { clip-path: polygon(100% -2%, 46% 50%, 100% 102%); background-color: color-mix(in srgb, var(--env) 98%, black); }
 .flap--right::after { background: linear-gradient(270deg, rgba(0,0,0,.03), rgba(0,0,0,.12)); }
 
 .seal {
@@ -133,6 +138,15 @@ button { font: inherit; color: inherit; }
   animation: sealBreath 2.8s var(--ease) infinite;
 }
 .seal svg { width: 100%; height: 100%; display: block; }
+/* wax colour follows --seal */
+#waxGrad stop:nth-child(1)  { stop-color: color-mix(in srgb, var(--seal) 50%, white); }
+#waxGrad stop:nth-child(2)  { stop-color: var(--seal); }
+#waxGrad stop:nth-child(3)  { stop-color: color-mix(in srgb, var(--seal) 84%, black); }
+#waxInner stop:nth-child(1) { stop-color: color-mix(in srgb, var(--seal) 82%, white); }
+#waxInner stop:nth-child(2) { stop-color: color-mix(in srgb, var(--seal) 89%, black); }
+.seal svg > circle:nth-of-type(2) { stroke: color-mix(in srgb, var(--seal) 80%, black); }
+.seal__sprig { stroke: color-mix(in srgb, var(--seal) 72%, black); }
+.seal__sprig [fill] { fill: color-mix(in srgb, var(--seal) 89%, black); }
 .seal:focus-visible { outline: 1px dashed var(--cream); outline-offset: 10px; border-radius: 50%; }
 @keyframes sealBreath {
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
@@ -172,7 +186,7 @@ button { font: inherit; color: inherit; }
   white-space: nowrap;
   padding: 9px 20px;
   border-radius: 99px;
-  background: rgba(62,72,46,.42);
+  background: color-mix(in srgb, color-mix(in srgb, var(--env) 45%, black) 50%, transparent);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -223,7 +237,7 @@ html[lang="th"] .envelope__hint { letter-spacing: .08em; font-size: 14px; }
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 12px;
   border-radius: 99px;
-  border: 1px solid rgba(124,132,100,.45);
+  border: 1px solid color-mix(in srgb, var(--sage-2) 45%, transparent);
   background: rgba(252,251,241,.82);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -241,7 +255,7 @@ html[lang="en"] .lang [data-lang="en"] { opacity: 1; font-weight: 600; }
 .music {
   width: 32px; height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(124,132,100,.45);
+  border: 1px solid color-mix(in srgb, var(--sage-2) 45%, transparent);
   background: rgba(252,251,241,.82);
   display: inline-flex; align-items: center; justify-content: center; gap: 2px;
   cursor: pointer;
@@ -283,6 +297,7 @@ html[lang="en"] .lang [data-lang="en"] { opacity: 1; font-weight: 600; }
   overflow: hidden;
 }
 
+.sec[hidden], .dots a[hidden] { display: none; }
 .sec {
   position: relative;
   min-height: 100svh;
@@ -424,7 +439,15 @@ html[lang="th"] .names { letter-spacing: .02em; font-weight: 500; font-size: cla
   width: min(320px, 82%);
   height: auto;
   margin: 18px 0 10px;
-  color: #8e967a;
+  color: color-mix(in srgb, var(--ink) 62%, var(--cream));
+}
+
+.villa[hidden] { display: none; }
+.villa--img {
+  width: min(300px, 80%);
+  max-height: 240px;
+  object-fit: contain;
+  mix-blend-mode: multiply; /* white backgrounds melt into the paper */
 }
 
 .when {
@@ -512,8 +535,9 @@ html[lang="th"] .btn { letter-spacing: .06em; font-size: 14px; }
 .story__line {
   position: absolute; left: 50%; top: 6px; bottom: 6px;
   width: 1px; background: var(--sage-2);
-  transform-origin: top; transform: scaleY(0);
+  transform-origin: top;
 }
+html.anim .story__line { transform: scaleY(0); }
 .story li {
   position: relative;
   display: grid; grid-template-columns: 1fr 1fr;
@@ -675,7 +699,7 @@ html[lang="th"] .thanks { font-size: 44px; }
 .sprig {
   position: absolute;
   width: 120px; height: auto;
-  color: #a9b291;
+  color: color-mix(in srgb, var(--sage-2) 62%, var(--cream));
   opacity: .55;
   pointer-events: none;
 }
